@@ -17,6 +17,26 @@
 #include <util/delay.h>
 #include <util/setbaud.h>
 #include <stdio.h>
+#include "lcd.h"
+
+void sendCommand(uint8_t command)
+{
+	/* send byte to slave */
+	
+	PORTB &= ~(1 << PB0); // SS LOW
+	
+	
+	SPDR = command; // send byte using SPI data register
+	
+	while(!(SPSR & (1 << SPIF)))
+	{
+		/* wait until the transmission is complete */
+		;
+	}
+	
+	
+	PORTB |= (1 << PB0); // SS HIGH
+}
 
 int
 main(void)
@@ -27,46 +47,37 @@ main(void)
 	SPCR |= (1 << 6) | (1 << 4);
 	/* set SPI clock rate to 1 MHz */
 	SPCR |= (1 << 0);
+	
+	/* Set PIR as input */
+	DDRH &= ~(1 << PH4);
+	
+	/* Initialize lcd */
+	lcd_init(LCD_DISP_ON);
+	
+	lcd_puts("Alarm system");
 
 	/* send message to slave */
 	while (1)
 	{
-		/* send byte to slave and receive a byte from slave */
-		PORTB &= ~(1 << PB0); // SS LOW
 		
-		
-		SPDR = (uint8_t)20; // send byte using SPI data register
-			
-		while(!(SPSR & (1 << SPIF)))
+		/* Check PIR value */
+		if ((PINH & (1 << PH4)) == (1 << PH4))
 		{
-			/* wait until the transmission is complete */
-			;
-		}
-			
-		//spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
-		
-		
-		PORTB |= (1 << PB0); // SS HIGH
-		
-		_delay_ms(5000);
-		
-		PORTB &= ~(1 << PB0); // SS LOW
-		
-		
-		SPDR = (uint8_t)19; // send byte using SPI data register
-		
-		while(!(SPSR & (1 << SPIF)))
-		{
-			/* wait until the transmission is complete */
-			;
+			//motion detected
+			sendCommand(20);
+			lcd_gotoxy(0,1);
+			lcd_clrscr();
+			lcd_puts("Motion detected");
+			_delay_ms(100);
+		} else {
+			//no motion
+			sendCommand(19);
+			lcd_gotoxy(0,1);
+			lcd_clrscr();
+			lcd_puts("No motion");
+			_delay_ms(100);
 		}
 		
-		//spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
-		
-		
-		PORTB |= (1 << PB0); // SS HIGH
-		
-		_delay_ms(5000);
 	}
 	
 	return 0;

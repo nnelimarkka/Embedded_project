@@ -32,7 +32,6 @@ void completeAction(uint8_t command)
 			PORTD &= ~(1 << PD7);
 			break;
 		default:
-			printf("incorrect command\n");
 			break;
 	}
 }
