@@ -18,51 +18,6 @@
 #include <util/setbaud.h>
 #include <stdio.h>
 
-static void
-USART_init(uint16_t ubrr)
-{
-	/* Set baud rate in the USART Baud Rate Registers (UBRR) */
-	UBRR0H = (unsigned char) (ubrr >> 8);
-	UBRR0L = (unsigned char) ubrr;
-	
-	/* Enable receiver and transmitter on RX0 and TX0 */
-	UCSR0B |= (1 << RXEN0) | (1 << TXEN0);
-	
-	/* Set frame format: 8 bit data, 2 stop bit */
-	UCSR0C |= (1 << USBS0) | (3 << UCSZ00);
-	
-}
-
-static void
-USART_Transmit(unsigned char data, FILE *stream)
-{
-	/* Wait until the transmit buffer is empty*/
-	while(!(UCSR0A & (1 << UDRE0)))
-	{
-		;
-	}
-	
-	/* Puts the data into a buffer, then sends/transmits the data */
-	UDR0 = data;
-}
-
-static char
-USART_Receive(FILE *stream)
-{
-	/* Wait until the transmit buffer is empty*/
-	while(!(UCSR0A & (1 << UDRE0)))
-	{
-		;
-	}
-	
-	/* Get the received data from the buffer */
-	return UDR0;
-}
-
-// Setup the stream functions for UART
-FILE uart_output = FDEV_SETUP_STREAM(USART_Transmit, NULL, _FDEV_SETUP_WRITE);
-FILE uart_input = FDEV_SETUP_STREAM(NULL, USART_Receive, _FDEV_SETUP_READ);
-
 int
 main(void)
 {
@@ -72,17 +27,7 @@ main(void)
 	SPCR |= (1 << 6) | (1 << 4);
 	/* set SPI clock rate to 1 MHz */
 	SPCR |= (1 << 0);
-	
-	// initialize the UART with 9600 BAUD
-	USART_init(MYUBRR);
-	
-	// redirect the stdin and stdout to UART functions
-	stdout = &uart_output;
-	stdin = &uart_input;
-	
-	unsigned char spi_send_data[20] = "master to slave\n";
-	unsigned char spi_receive_data[20];
-	
+
 	/* send message to slave */
 	while (1)
 	{
