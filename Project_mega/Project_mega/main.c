@@ -5,6 +5,8 @@
  * Author : nikla
  */ 
 
+/* Mega is master */
+
 #define F_CPU 16000000UL
 #define FOSC 16000000UL // Clock Speed
 #define BAUD 9600
@@ -81,31 +83,45 @@ main(void)
 	unsigned char spi_send_data[20] = "master to slave\n";
 	unsigned char spi_receive_data[20];
 	
-	/* send message to slave and receive message from slave */
+	/* send message to slave */
 	while (1)
 	{
 		/* send byte to slave and receive a byte from slave */
 		PORTB &= ~(1 << PB0); // SS LOW
 		
-		for(int8_t spi_data_index = 0; spi_data_index < sizeof(spi_send_data); spi_data_index++)
+		
+		SPDR = (uint8_t)20; // send byte using SPI data register
+			
+		while(!(SPSR & (1 << SPIF)))
 		{
-			
-			SPDR = spi_send_data[spi_data_index]; // send byte using SPI data register
-			
-			while(!(SPSR & (1 << SPIF)))
-			{
-				/* wait until the transmission is complete */
-				;
-			}
-			
-			spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
+			/* wait until the transmission is complete */
+			;
 		}
+			
+		//spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
+		
 		
 		PORTB |= (1 << PB0); // SS HIGH
 		
-		printf(spi_receive_data);
-		_delay_ms(2000);
-
+		_delay_ms(5000);
+		
+		PORTB &= ~(1 << PB0); // SS LOW
+		
+		
+		SPDR = (uint8_t)19; // send byte using SPI data register
+		
+		while(!(SPSR & (1 << SPIF)))
+		{
+			/* wait until the transmission is complete */
+			;
+		}
+		
+		//spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
+		
+		
+		PORTB |= (1 << PB0); // SS HIGH
+		
+		_delay_ms(5000);
 	}
 	
 	return 0;

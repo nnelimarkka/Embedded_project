@@ -5,6 +5,8 @@
  * Author : nikla
  */ 
 
+/* Uno as slave*/
+
 #define F_CPU 16000000UL
 #define FOSC 16000000UL // Clock Speed
 #define BAUD 9600
@@ -14,6 +16,26 @@
 #include <util/delay.h>
 #include <util/setbaud.h>
 #include <stdio.h>
+#include <avr/interrupt.h>
+
+volatile uint8_t spi_recv;
+
+//LED on pin7 for now
+void completeAction(uint8_t command)
+{
+	switch (command)
+	{
+		case 20:
+			PORTD |= (1 << PD7);
+			break;
+		case 19:
+			PORTD &= ~(1 << PD7);
+			break;
+		default:
+			printf("incorrect command\n");
+			break;
+	}
+}
 
 static void
 USART_init(uint16_t ubrr) // unsigned int
@@ -56,6 +78,12 @@ USART_Receive(FILE *stream)
 	return UDR0;
 }
 
+ISR (SPI_STC_vect)
+{
+	spi_recv = SPDR;
+	completeAction(spi_recv);
+}
+
 // Setup the stream functions for UART
 FILE uart_output = FDEV_SETUP_STREAM(USART_Transmit, NULL, _FDEV_SETUP_WRITE);
 FILE uart_input = FDEV_SETUP_STREAM(NULL, USART_Receive, _FDEV_SETUP_READ);
@@ -68,6 +96,10 @@ main(void)
 	/* set SPI enable */
 	SPCR  = (1 << 6);
 	
+	SPCR |= (1<<SPIE); // Enable SPI Interrupt
+	
+	DDRD |= (1 << PD7); //LED output
+	
 	// initialize the UART with 9600 BAUD
 	USART_init(MYUBRR);
 	
@@ -78,25 +110,29 @@ main(void)
 	char spi_send_data[20] = "slave to master\n";
 	char spi_receive_data[20];
 	
+	sei();
+	
 	/* send message to master and receive message from master */
 	while (1)
 	{
 		
-		for(int8_t spi_data_index = 0; spi_data_index < sizeof(spi_send_data); spi_data_index++)
-		{
-			
-			SPDR = spi_send_data[spi_data_index]; // send byte using SPI data register
-			
-			while(!(SPSR & (1 << SPIF)))
-			{
-				/* wait until the transmission is complete */
-				;
-			}
-			spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
-
-		}
 		
-		printf(spi_receive_data);
+		//for(int8_t spi_data_index = 0; spi_data_index < sizeof(spi_send_data); spi_data_index++)
+		//{
+			
+			//SPDR = spi_send_data[spi_data_index]; // send byte using SPI data register
+			
+			//while(!(SPSR & (1 << SPIF)))
+			//{
+				/* wait until the transmission is complete */
+				//;
+			//}
+			//spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
+
+		//}
+		
+		//printf(spi_receive_data); 
+		;
 	}
 	
 	return 0;
