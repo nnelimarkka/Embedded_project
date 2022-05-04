@@ -5,6 +5,8 @@
  * Author : nikla
  */ 
 
+#define CHARCOUNT 16
+
 /* Mega is master */
 
 #define F_CPU 16000000UL
@@ -18,6 +20,15 @@
 #include <util/setbaud.h>
 #include <stdio.h>
 #include "lcd.h"
+
+enum States {
+	ACTIVATED,
+	SETTIMER,
+	ASKPASSWORD,
+	DEACTIVATED
+	};
+
+volatile States state = ACTIVATED;
 
 void sendCommand(uint8_t command)
 {
@@ -36,6 +47,15 @@ void sendCommand(uint8_t command)
 	
 	
 	PORTB |= (1 << PB0); // SS HIGH
+}
+
+void lcd_clearRow(uint8_t row)
+{
+	lcd_gotoxy(0,row);
+	for (int i = 0; i< CHARCOUNT; i++)
+	{
+		lcd_puts(" ");
+	}
 }
 
 int
@@ -65,15 +85,15 @@ main(void)
 		{
 			//motion detected
 			sendCommand(20);
+			lcd_clearRow(1);
 			lcd_gotoxy(0,1);
-			lcd_clrscr();
 			lcd_puts("Motion detected");
 			_delay_ms(100);
 		} else {
 			//no motion
 			sendCommand(19);
+			lcd_clearRow(1);
 			lcd_gotoxy(0,1);
-			lcd_clrscr();
 			lcd_puts("No motion");
 			_delay_ms(100);
 		}

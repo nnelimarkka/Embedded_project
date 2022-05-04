@@ -59,23 +59,6 @@ main(void)
 	/* send message to master and receive message from master */
 	while (1)
 	{
-		
-		
-		//for(int8_t spi_data_index = 0; spi_data_index < sizeof(spi_send_data); spi_data_index++)
-		//{
-			
-			//SPDR = spi_send_data[spi_data_index]; // send byte using SPI data register
-			
-			//while(!(SPSR & (1 << SPIF)))
-			//{
-				/* wait until the transmission is complete */
-				//;
-			//}
-			//spi_receive_data[spi_data_index] = SPDR; // receive byte from the SPI data register
-
-		//}
-		
-		//printf(spi_receive_data); 
 		;
 	}
 	
