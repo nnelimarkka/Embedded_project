@@ -28,7 +28,11 @@ enum States {
 	DEACTIVATED
 	};
 
-volatile States state = ACTIVATED;
+volatile enum States state = ACTIVATED;
+
+const uint16_t interruptTime = 65534;
+
+volatile uint16_t interruptCount = 0;
 
 void sendCommand(uint8_t command)
 {
@@ -58,6 +62,20 @@ void lcd_clearRow(uint8_t row)
 	}
 }
 
+/* timer/counter1 fires every ~4 seconds*/
+ISR (TIMER1_OVF_vect)
+{
+	interruptCount++;
+	if (interruptCount == 5) //~20 second timeout for password input
+	{
+		sendCommand(20);
+		
+		interruptCount = 0;
+		
+		TIMSK1 &= ~(1 << TOIE1); // disable overflow interrupt
+	}
+}
+
 int
 main(void)
 {
@@ -74,49 +92,56 @@ main(void)
 	/* Initialize lcd */
 	lcd_init(LCD_DISP_ON);
 	
+	lcd_clrscr();
+	
 	lcd_puts("Alarm system");
-
-	/* send message to slave */
 	
-	switch(state)
+	while (1)
 	{
-		case ACTIVATED:
-			while (1)
+		switch(state)
+		{
+			case ACTIVATED:
+			/* Check PIR value */
+			if ((PINH & (1 << PH4)) == (1 << PH4))
 			{
-				
-				/* Check PIR value */
-				if ((PINH & (1 << PH4)) == (1 << PH4))
-				{
-					//motion detected
-					sendCommand(20);
-					lcd_clearRow(1);
-					lcd_gotoxy(0,1);
-					lcd_puts("Motion detected");
-					_delay_ms(100);
-					state = SETTIMER;
-					break;
-					} else {
-					//no motion
-					sendCommand(19);
-					lcd_clearRow(1);
-					lcd_gotoxy(0,1);
-					lcd_puts("No motion");
-					_delay_ms(100);
-				}
-				
+				//motion detected
+				lcd_clearRow(1);
+				lcd_gotoxy(0,1);
+				lcd_puts("Motion detected");
+				state = SETTIMER;
+				} else {
+				//no motion
+				lcd_clearRow(1);
+				lcd_gotoxy(0,1);
+				lcd_puts("No motion");
+				state = ACTIVATED;
 			}
+			break;
 			
-		case SETTIMER:
+			case SETTIMER:
+			lcd_clearRow(1);
+			lcd_gotoxy(0,1);
+			lcd_puts("timer start");
+			
+			cli();
+			
+			/* set up the 16-bit timer/counter1 */
+			PRR0 &= ~(1 << PRTIM1);
+			TCNT1 = 0; // reset timer/counter1 register
+			TCCR1A = 0x00;
+			TCCR1B = 0b00000101;
+			
+			TIMSK1 |= (1 << TOIE1); // enable overflow interrupt
+			sei();
+			state = ASKPASSWORD;
 			break;
-		
-		case ASKPASSWORD:
+			
+			case ASKPASSWORD:
 			break;
-		
-		case DEACTIVATED:
+			
+			case DEACTIVATED:
 			break;
+		}
 	}
-	
-	
-	
 	return 0;
 }
