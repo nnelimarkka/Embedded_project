@@ -77,28 +77,46 @@ main(void)
 	lcd_puts("Alarm system");
 
 	/* send message to slave */
-	while (1)
+	
+	switch(state)
 	{
+		case ACTIVATED:
+			while (1)
+			{
+				
+				/* Check PIR value */
+				if ((PINH & (1 << PH4)) == (1 << PH4))
+				{
+					//motion detected
+					sendCommand(20);
+					lcd_clearRow(1);
+					lcd_gotoxy(0,1);
+					lcd_puts("Motion detected");
+					_delay_ms(100);
+					state = SETTIMER;
+					break;
+					} else {
+					//no motion
+					sendCommand(19);
+					lcd_clearRow(1);
+					lcd_gotoxy(0,1);
+					lcd_puts("No motion");
+					_delay_ms(100);
+				}
+				
+			}
+			
+		case SETTIMER:
+			break;
 		
-		/* Check PIR value */
-		if ((PINH & (1 << PH4)) == (1 << PH4))
-		{
-			//motion detected
-			sendCommand(20);
-			lcd_clearRow(1);
-			lcd_gotoxy(0,1);
-			lcd_puts("Motion detected");
-			_delay_ms(100);
-		} else {
-			//no motion
-			sendCommand(19);
-			lcd_clearRow(1);
-			lcd_gotoxy(0,1);
-			lcd_puts("No motion");
-			_delay_ms(100);
-		}
+		case ASKPASSWORD:
+			break;
 		
+		case DEACTIVATED:
+			break;
 	}
+	
+	
 	
 	return 0;
 }
