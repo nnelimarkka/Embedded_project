@@ -27,7 +27,7 @@ volatile uint8_t buzzerEnable = FALSE;
 
 void PWM();
 
-//LED on pin7 for now
+
 void completeAction(uint8_t command)
 {
 	switch (command)
