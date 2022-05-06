@@ -2,7 +2,7 @@
  * Project_uno.c
  *
  * Created: 20/04/2022 16.19.34
- * Author : nikla
+ * Author : Niklas, Rasmus & Riku
  */ 
 
 /* Uno as slave*/

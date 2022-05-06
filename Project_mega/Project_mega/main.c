@@ -2,7 +2,7 @@
  * Project_mega.c
  *
  * Created: 20/04/2022 16.10.32
- * Author : nikla
+ * Author : Niklas, Rasmus & Riku
  */ 
 
 #define CHARCOUNT 16
