@@ -44,6 +44,8 @@ const uint16_t interruptTime = 65534;
 
 volatile uint16_t interruptCount = 0;
 
+volatile uint8_t isIncorrectPassword = 0;
+
 void sendCommand(uint8_t command)
 {
 	/* send byte to slave */
@@ -106,6 +108,8 @@ main(void)
 	
 	lcd_puts("Alarm system");
 	
+	KEYPAD_Init();
+	
 	while (1)
 	{
 		switch(state)
@@ -147,18 +151,27 @@ main(void)
 			break;
 			
 			case ASKPASSWORD:
-			lcd_clearRow(1);
-			lcd_gotoxy(0,1);
-			lcd_puts("Give password");
+			if (isIncorrectPassword == 0)
+			{
+				lcd_clearRow(1);
+				lcd_gotoxy(0,1);
+				lcd_puts("Give password");
+			}
+			
 			uint8_t pw = keypad();
 			if (pw == 1)
 			{
-				 sendCommand(DEACTIVATE);
-				 state = DEACTIVATED;
+				isIncorrectPassword = 0;
+				sendCommand(DEACTIVATE);
+				state = DEACTIVATED;
 			} else 
 			{
+				isIncorrectPassword = 1;
 				sendCommand(ALARM);
 				state = ASKPASSWORD;
+				lcd_clearRow(1);
+				lcd_gotoxy(0,1);
+				lcd_puts("Wrong password!");
 			}
 			break;
 			
@@ -185,7 +198,7 @@ uint8_t keypad()
 	uint8_t g =' ';
 	uint8_t h =' ';
 	
-	char currentPassword[5] = "";
+	char currentPassword[5] = {' ', ' ', ' ', ' ', '\n'};
 	
 	for (int i=0;i<PSLENGTH;i++) //Define the correct password (e-h)
 	{
@@ -213,7 +226,7 @@ uint8_t keypad()
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			if (count==2)
+			else if (count==2)
 			{
 				b=' ';
 				count=count-1;
@@ -223,21 +236,23 @@ uint8_t keypad()
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			if (count==3)
+			else if (count==3)
 			{
 				c=' ';
 				count=count-1;
 				currentPassword[count] = c;
+
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			if (count==0)
+			else if (count==0)
 			{
 				d=' ';
 				count=3;
 				currentPassword[count] = d;
+
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
@@ -252,36 +267,40 @@ uint8_t keypad()
 				a=y;
 				count=count+1;
 				currentPassword[count] = a;
+
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			if (count==1)
+			else if (count==1)
 			{
 				b=y;
 				count=count+1;
 				currentPassword[count] = b;
+
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			if (count==2)
+			else if (count==2)
 			{
 				c=y;
 				count=count+1;
 				currentPassword[count] = c;
+
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			if (count==3)
+			else if (count==3)
 			{
 				d=y;
 				count=0;
 				currentPassword[count] = d;
+
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
