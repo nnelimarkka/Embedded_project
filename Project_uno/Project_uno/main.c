@@ -25,7 +25,7 @@ volatile uint8_t spi_recv;
 
 volatile uint8_t buzzerEnable = FALSE;
 
-void PWM();
+void PWM(uint8_t x);
 
 
 void completeAction(uint8_t command)
@@ -34,10 +34,11 @@ void completeAction(uint8_t command)
 	{
 		case 20:
 			buzzerEnable = TRUE;
-			PWM();
+			PWM(1); //enable buzzer
 			break;
 		case 19:
 			buzzerEnable = FALSE;
+			PWM(0); //disable buzzer
 			break;
 		default:
 			break;
@@ -55,7 +56,7 @@ ISR (TIMER1_COMPA_vect)
 	TCNT1 = 0; // reset timer counter
 }
 
-void PWM()
+void PWM(uint8_t x)
 {
 	
 	DDRB |= (1 << PB1); // OC1A is located in digital pin 9
@@ -76,17 +77,8 @@ void PWM()
 	
 	TIMSK1 |= (1 << 1); // enable compare match A interrupt
 	
-	OCR1A = 2440;  
-	OCR1B = 500;
-	
-	while(buzzerEnable == TRUE)
-	{
-		/* enable timer/counter1 */
-		TCCR1B |= (1 << 0); // set prescaling to 1 (no prescaling)
-		
-	}
-	TIMSK1 &= ~(1 << 1); // disable compare match A interrupt
-	
+	OCR1A = (x==1) ? 2440 : 0;  
+	OCR1B = (x==1) ? 500 : 0;
 	return;
 }
 
@@ -107,7 +99,13 @@ main(void)
 	/* send message to master and receive message from master */
 	while (1)
 	{
-		;
+		while(buzzerEnable == TRUE)
+		{
+			/* enable timer/counter1 */
+			TCCR1B |= (1 << 0); // set prescaling to 1 (no prescaling)
+			
+		}
+		TIMSK1 &= ~(1 << 1); // disable compare match A interrupt
 	}
 	
 	return 0;

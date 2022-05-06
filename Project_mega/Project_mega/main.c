@@ -40,8 +40,6 @@ enum States {
 
 volatile enum States state = ACTIVATED;
 
-const uint16_t interruptTime = 65534;
-
 volatile uint16_t interruptCount = 0;
 
 volatile uint8_t isIncorrectPassword = 0;
@@ -161,6 +159,8 @@ main(void)
 			uint8_t pw = keypad();
 			if (pw == 1)
 			{
+				TIMSK1 &= ~(1 << TOIE1); // disable overflow interrupt to prevent timer interrupt
+				interruptCount = 0;
 				isIncorrectPassword = 0;
 				sendCommand(DEACTIVATE);
 				state = DEACTIVATED;
@@ -179,7 +179,10 @@ main(void)
 			lcd_clearRow(1);
 			lcd_gotoxy(0,1);
 			lcd_puts("Alarm deactivated");
-			//todo rearm
+			
+			uint8_t x =KEYPAD_GetKey();
+			if (x == 'A') state = ACTIVATED; //Rearm by pressing 'A' on keypad
+			else state = DEACTIVATED;
 			break;
 		}
 	}
@@ -198,7 +201,7 @@ uint8_t keypad()
 	uint8_t g =' ';
 	uint8_t h =' ';
 	
-	char currentPassword[5] = {' ', ' ', ' ', ' ', '\n'};
+	char currentPassword[5] = {' ', ' ', ' ', ' ', '\0'};
 	
 	for (int i=0;i<PSLENGTH;i++) //Define the correct password (e-h)
 	{
@@ -247,10 +250,10 @@ uint8_t keypad()
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
 			}
-			else if (count==0)
+			else if (count==4)
 			{
 				d=' ';
-				count=3;
+				count=count-1;
 				currentPassword[count] = d;
 
 				
@@ -265,8 +268,9 @@ uint8_t keypad()
 			if (count==0)
 			{
 				a=y;
-				count=count+1;
 				currentPassword[count] = a;
+				count=count+1;
+				
 
 				
 				lcd_clearRow(1);
@@ -276,8 +280,9 @@ uint8_t keypad()
 			else if (count==1)
 			{
 				b=y;
-				count=count+1;
 				currentPassword[count] = b;
+				count=count+1;
+				
 
 				
 				lcd_clearRow(1);
@@ -287,8 +292,9 @@ uint8_t keypad()
 			else if (count==2)
 			{
 				c=y;
-				count=count+1;
 				currentPassword[count] = c;
+				count=count+1;
+				
 
 				
 				lcd_clearRow(1);
@@ -298,13 +304,18 @@ uint8_t keypad()
 			else if (count==3)
 			{
 				d=y;
-				count=0;
 				currentPassword[count] = d;
+				count=count+1;
+				
 
 				
 				lcd_clearRow(1);
 				lcd_gotoxy(0,1);
 				lcd_puts(currentPassword);
+			}
+			else if (count == 4)
+			{
+				return 0; // password is too long and it cannot be correct
 			}
 		}
 	}
