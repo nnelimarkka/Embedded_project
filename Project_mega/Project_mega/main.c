@@ -76,7 +76,7 @@ void lcd_clearRow(uint8_t row)
 ISR (TIMER1_OVF_vect)
 {
 	interruptCount++;
-	if (interruptCount == 5) //~20 second timeout for password input
+	if (interruptCount == 5) //~26 second timeout for password input
 	{
 		sendCommand(ALARM);
 		
